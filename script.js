@@ -65,9 +65,9 @@ class DoorStatusManager {
         this.updateDoorStatus(!isCurrentlyOpen);
     }
 
-    // Connect to real-time sensor data via Server-Sent Events
+    // Connect to real-time sensor data via polling (Vercel-compatible)
     startSensorSimulation() {
-        console.log('🔌 Connecting to sensor stream...');
+        console.log('🔌 Connecting to sensor...');
         
         // Show connecting status
         this.setConnectingStatus();
@@ -75,57 +75,57 @@ class DoorStatusManager {
         // Fetch initial state
         this.fetchCurrentState();
         
-        // Connect to SSE stream for real-time updates
-        this.connectToStream();
+        // Start polling for updates every 2 seconds
+        this.startPolling();
     }
     
     async fetchCurrentState() {
         try {
-            const response = await fetch('http://localhost:3000/api/door/status');
+            // Use relative path for Vercel deployment
+            const response = await fetch('/api/status');
             const data = await response.json();
             this.updateDoorStatus(data.isOpen, data.lastUpdated);
-            console.log('✓ Initial state loaded:', data);
+            console.log('✓ State loaded:', data);
         } catch (error) {
-            console.error('✗ Failed to fetch initial state:', error);
+            console.error('✗ Failed to fetch state:', error);
+            this.setConnectingStatus();
         }
     }
     
-    connectToStream() {
-        const eventSource = new EventSource('http://localhost:3000/api/door/stream');
-        
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log('📡 Real-time update:', data);
-            
-            // Handle connection status messages
-            if (data.status === 'WIFI_CONNECTING') {
-                this.setWiFiConnectingStatus();
-            } else if (data.status === 'MQTT_CONNECTING') {
-                this.setMQTTConnectingStatus();
-            } else if (data.status === 'MQTT_DISCONNECTED') {
-                this.setMQTTConnectingStatus();
-            } else if (data.status === 'MQTT_CONNECTED') {
-                // Connection restored, wait for door state
-                console.log('✓ MQTT connected, awaiting sensor data...');
-            } else if (data.hasOwnProperty('isOpen')) {
-                // Normal door state update
-                this.updateDoorStatus(data.isOpen, data.lastUpdated);
+    startPolling() {
+        // Poll every 2 seconds for updates
+        this.pollingInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                // Handle connection status messages
+                if (data.status === 'WIFI_CONNECTING') {
+                    this.setWiFiConnectingStatus();
+                } else if (data.status === 'MQTT_CONNECTING') {
+                    this.setMQTTConnectingStatus();
+                } else if (data.status === 'MQTT_DISCONNECTED') {
+                    this.setMQTTConnectingStatus();
+                } else if (data.status === 'MQTT_CONNECTED') {
+                    console.log('✓ MQTT connected, awaiting sensor data...');
+                } else if (data.hasOwnProperty('isOpen')) {
+                    // Normal door state update
+                    this.updateDoorStatus(data.isOpen, data.lastUpdated);
+                }
+            } catch (error) {
+                console.error('✗ Polling error:', error);
+                this.setConnectingStatus();
             }
-        };
+        }, 2000);
         
-        eventSource.onerror = (error) => {
-            console.error('✗ SSE Connection error:', error);
-            this.setConnectingStatus();
-            // Attempt to reconnect after 5 seconds
-            setTimeout(() => {
-                console.log('🔄 Reconnecting...');
-                this.connectToStream();
-            }, 5000);
-        };
-        
-        eventSource.onopen = () => {
-            console.log('✓ Connected to real-time sensor stream');
-        };
+        console.log('✓ Polling started (2s interval)');
+    }
+    
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            console.log('✓ Polling stopped');
+        }
     }
 
     // Public method to update status from external sensor readings
