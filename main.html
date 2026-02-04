@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeimdALERT</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="header__title">HeimdALERT</h1>
+            <p class="header__subtitle">Smart Door Monitoring System</p>
+        </header>
+
+        <main class="main">
+            <div class="door-status door-status--closed">
+                <div class="door-status__icon">
+                    <img class="door-icon door-icon--closed" src="assets/door-closed.svg" alt="Door Closed">
+                    <img class="door-icon door-icon--open" src="assets/door-open.svg" alt="Door Open">
+                </div>
+                
+                <div class="door-status__info">
+                    <h2 class="door-status__state">Closed</h2>
+                    <p class="door-status__message">Door is securely closed</p>
+                </div>
+
+                <div class="door-status__details">
+                    <div class="detail-item">
+                        <span class="detail-item__label">Last Updated:</span>
+                        <span class="detail-item__value"></span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
